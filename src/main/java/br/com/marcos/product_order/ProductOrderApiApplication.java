@@ -1,4 +1,4 @@
-package br.com.marcos.product_order_api;
+package br.com.marcos.product_order;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
