@@ -116,4 +116,14 @@ public class Product {
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
+
+	public void setStock(Integer stock) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public Integer getStock() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
