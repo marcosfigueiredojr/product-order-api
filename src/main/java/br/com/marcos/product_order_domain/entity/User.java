@@ -3,6 +3,7 @@ package br.com.marcos.product_order_domain.entity;
 import java.time.Instant;
 import java.util.UUID;
 
+// ⚠️ Idealmente isso deve ser um enum do seu domínio
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,9 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-
-// ⚠️ Idealmente isso deve ser um enum do seu domínio
-import co.elastic.clients.elasticsearch.security.get_role.Role;
+import br.com.marcos.product_order_domain.enums.Role;
 
 @Entity
 @Table(name = "user_account")

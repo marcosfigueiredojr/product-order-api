@@ -1,4 +1,4 @@
-package br.com.marcos.product_order_api.dto;
+package br.com.marcos.product_order_application.dto;
 
 import java.math.BigDecimal;
 import java.util.UUID;

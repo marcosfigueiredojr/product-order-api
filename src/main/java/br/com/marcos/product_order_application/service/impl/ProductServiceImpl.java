@@ -1,4 +1,4 @@
-package br.com.marcos.product_order_aplication.service.impl;
+package br.com.marcos.product_order_application.service.impl;
 
 import java.util.List;
 import java.util.UUID;
@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.marcos.product_order_api.dto.ProductRequestDTO;
-import br.com.marcos.product_order_api.dto.ProductResponseDTO;
-import br.com.marcos.product_order_aplication.service.ProductService;
+import br.com.marcos.product_order_application.dto.ProductRequestDTO;
+import br.com.marcos.product_order_application.dto.ProductResponseDTO;
+import br.com.marcos.product_order_application.service.ProductService;
 import br.com.marcos.product_order_domain.entity.Product;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 import br.com.marcos.product_order_domain.exceptions.ResourceNotFoundException;

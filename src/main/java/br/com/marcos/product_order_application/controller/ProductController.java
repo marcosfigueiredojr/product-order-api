@@ -1,4 +1,4 @@
-package br.com.marcos.product_order_api.controller;
+package br.com.marcos.product_order_application.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.marcos.product_order_api.dto.ProductRequestDTO;
-import br.com.marcos.product_order_api.dto.ProductResponseDTO;
-import br.com.marcos.product_order_aplication.service.ProductService;
+import br.com.marcos.product_order_application.dto.ProductRequestDTO;
+import br.com.marcos.product_order_application.dto.ProductResponseDTO;
+import br.com.marcos.product_order_application.service.ProductService;
 import jakarta.validation.Valid;
 
 @RestController
