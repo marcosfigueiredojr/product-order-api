@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.marcos.product_order_api.dto.ProductRequestDTO;
 import br.com.marcos.product_order_api.dto.ProductResponseDTO;
 import br.com.marcos.product_order_aplication.service.ProductService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/products")
@@ -30,7 +31,7 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<ProductResponseDTO> create(
-            @RequestBody ProductRequestDTO request
+            @RequestBody @Valid ProductRequestDTO request
     ) {
         ProductResponseDTO response = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -39,7 +40,7 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> update(
             @PathVariable UUID id,
-            @RequestBody ProductRequestDTO request
+            @RequestBody @Valid ProductRequestDTO request
     ) {
         return ResponseEntity.ok(service.update(id, request));
     }

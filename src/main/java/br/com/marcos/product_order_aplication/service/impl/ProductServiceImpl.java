@@ -12,6 +12,8 @@ import br.com.marcos.product_order_api.dto.ProductResponseDTO;
 import br.com.marcos.product_order_aplication.service.ProductService;
 import br.com.marcos.product_order_domain.entity.Product;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
+import br.com.marcos.product_order_domain.exceptions.ResourceNotFoundException;
+
 
 @Service
 @Transactional
@@ -38,7 +40,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponseDTO update(UUID id, ProductRequestDTO request) {
         Product product = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+        		 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -52,7 +54,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public ProductResponseDTO findById(UUID id) {
         Product product = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         return toResponse(product);
     }
@@ -69,7 +71,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void delete(UUID id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Product not found");
+            throw new ResourceNotFoundException("Product not found");
         }
         repository.deleteById(id);
     }
