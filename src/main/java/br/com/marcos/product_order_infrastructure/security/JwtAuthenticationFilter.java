@@ -12,6 +12,7 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends GenericFilter {
+	private static final long serialVersionUID = 1L;
 
     private final JwtService jwtService;
     private final UserDetailsServiceImpl userDetailsService;
@@ -37,7 +38,7 @@ public class JwtAuthenticationFilter extends GenericFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            if (jwtService.isValid(token)) {
+            if (jwtService.isTokenValid(token)) {
                 String username = jwtService.extractUsername(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 

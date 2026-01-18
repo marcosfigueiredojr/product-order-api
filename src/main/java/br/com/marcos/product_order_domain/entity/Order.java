@@ -19,7 +19,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "tb_orders")
 public class Order {
 
     @Id

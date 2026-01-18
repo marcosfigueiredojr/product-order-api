@@ -1,4 +1,4 @@
-CREATE TABLE tb_product (
+CREATE TABLE IF NOT EXISTS tb_product (
     id BINARY(16) NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,

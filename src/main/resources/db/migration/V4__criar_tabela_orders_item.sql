@@ -1,4 +1,4 @@
-CREATE TABLE tb_order_item (
+CREATE TABLE IF NOT EXISTS tb_order_item (
     id BINARY(16) NOT NULL,
     order_id BINARY(16) NOT NULL,
     product_id BINARY(16) NOT NULL,

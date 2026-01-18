@@ -11,8 +11,8 @@ import br.com.marcos.product_order_application.dto.ProductRequestDTO;
 import br.com.marcos.product_order_application.dto.ProductResponseDTO;
 import br.com.marcos.product_order_application.service.ProductService;
 import br.com.marcos.product_order_domain.entity.Product;
-import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 import br.com.marcos.product_order_domain.exceptions.ResourceNotFoundException;
+import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 
 
 @Service
@@ -28,11 +28,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponseDTO create(ProductRequestDTO request) {
         Product product = new Product();
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
-        product.setStock(request.getStock());
-
+        updateEntityFromDto(request, product);
         Product saved = repository.save(product);
         return toResponse(saved);
     }
@@ -40,16 +36,30 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponseDTO update(UUID id, ProductRequestDTO request) {
         Product product = repository.findById(id)
-        		 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-        product.setName(request.getName());
-        product.setDescription(request.getDescription());
-        product.setPrice(request.getPrice());
-        product.setStock(request.getStock());
-
+                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        updateEntityFromDto(request, product);
         return toResponse(repository.save(product));
     }
 
+    private void updateEntityFromDto(ProductRequestDTO dto, Product entity) {
+        entity.setName(dto.getName());
+        entity.setDescription(dto.getDescription());
+        entity.setPrice(dto.getPrice());
+        entity.setStockQuantity(dto.getStock());  
+        entity.setCategory(dto.getCategory());
+    }
+
+    private ProductResponseDTO toResponse(Product product) {
+        return new ProductResponseDTO(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStockQuantity(),
+                product.getCategory()
+        );
+    }
+ 
     @Override
     @Transactional(readOnly = true)
     public ProductResponseDTO findById(UUID id) {
@@ -80,13 +90,5 @@ public class ProductServiceImpl implements ProductService {
        Mapper manual
        ========================= */
 
-    private ProductResponseDTO toResponse(Product product) {
-        return new ProductResponseDTO(
-                product.getId(),
-                product.getName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStock()
-        );
-    }
-}
+  
+ }

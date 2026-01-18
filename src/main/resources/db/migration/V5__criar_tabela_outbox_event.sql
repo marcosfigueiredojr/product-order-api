@@ -1,4 +1,4 @@
-CREATE TABLE tb_outbox_event (
+CREATE TABLE IF NOT EXISTS tb_outbox_event (
     id BINARY(16) NOT NULL,
     aggregate_type VARCHAR(100) NOT NULL,
     aggregate_id BINARY(16) NOT NULL,

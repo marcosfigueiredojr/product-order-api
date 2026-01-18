@@ -1,4 +1,4 @@
-CREATE TABLE tb_orders (
+CREATE TABLE IF NOT EXISTS tb_orders (
     id BINARY(16) NOT NULL,
     user_account_id BINARY(16) NOT NULL,
     status VARCHAR(20) NOT NULL,

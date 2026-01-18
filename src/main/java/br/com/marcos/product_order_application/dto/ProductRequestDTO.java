@@ -9,10 +9,10 @@ import jakarta.validation.constraints.Size;
 
 public class ProductRequestDTO {
 
-	@NotBlank(message = "Product name is required")
+    @NotBlank(message = "Product name is required")
     @Size(max = 150, message = "Product name must have at most 150 characters")
     private String name;
-	
+    
     @Size(max = 500, message = "Description must have at most 500 characters")
     private String description;
     
@@ -24,38 +24,25 @@ public class ProductRequestDTO {
     @Positive(message = "Stock must be greater than zero")
     private Integer stock;
 
+    @NotBlank(message = "Category is required")
+    private String category;
+
     public ProductRequestDTO() {
     }
 
-    public String getName() {
-        return name;
-    }
+    // Getters e Setters (Incluindo o novo campo)
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getDescription() {
-        return description;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public Integer getStock() {
-        return stock;
-    }
-
-    public void setStock(Integer stock) {
-        this.stock = stock;
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 }

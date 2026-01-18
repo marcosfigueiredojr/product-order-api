@@ -20,7 +20,7 @@ import br.com.marcos.product_order_application.service.ProductService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/products")
 public class ProductController {
 
     private final ProductService service;
@@ -30,12 +30,17 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<ProductResponseDTO> create(
-            @RequestBody @Valid ProductRequestDTO request
-    ) {
-        ProductResponseDTO response = service.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+    public ResponseEntity<?> create(@RequestBody @Valid ProductRequestDTO request) {
+       try {
+            ProductResponseDTO response = service.create(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+       } catch (Exception e) {
+         // Isso imprimirá o erro real no console do seu Eclipse para debug
+         e.printStackTrace(); 
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro ao criar produto: " + e.getMessage());
+       }
+   }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> update(

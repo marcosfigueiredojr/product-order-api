@@ -1,9 +1,15 @@
 package br.com.marcos.product_order_domain.entity;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
-// ⚠️ Idealmente isso deve ser um enum do seu domínio
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import br.com.marcos.product_order_domain.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,11 +17,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import br.com.marcos.product_order_domain.enums.Role;
 
 @Entity
-@Table(name = "user_account")
-public class User {
+@Table(name = "tb_user_account")
+public class User implements UserDetails {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @Column(columnDefinition = "BINARY(16)")
@@ -34,17 +41,46 @@ public class User {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    // 🔹 Construtor padrão (obrigatório para JPA)
-    public User() {
+    public User() {}
+
+    /* ==========================
+       MÉTODOS USERDETAILS (SPRING SECURITY)
+       ========================== */
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // CORREÇÃO: O Spring Security exige o prefixo ROLE_ para funcionar com hasRole()
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
-    // 🔹 Construtor completo (opcional)
-    public User(UUID id, String username, String passwordHash, Role role, Instant createdAt) {
-        this.id = id;
-        this.username = username;
-        this.passwordHash = passwordHash;
-        this.role = role;
-        this.createdAt = createdAt;
+    @Override
+    public String getPassword() {
+        return this.passwordHash;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 
     /* ==========================
@@ -53,7 +89,9 @@ public class User {
 
     @PrePersist
     public void prePersist() {
-        this.id = UUID.randomUUID();
+        if (this.id == null) {
+            this.id = UUID.randomUUID();
+        }
         this.createdAt = Instant.now();
     }
 
@@ -61,39 +99,17 @@ public class User {
        GETTERS AND SETTERS
        ========================== */
 
-    public UUID getId() {
-        return id;
-    }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+    public String getUsernameField() { return username; } // Nome alterado para evitar conflito com UserDetails
+    public void setUsername(String username) { this.username = username; }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    public Instant getCreatedAt() { return createdAt; }
 }

@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "outbox_event")
+@Table(name = "tb_outbox_event")
 public class OutboxEvent {
 
     @Id

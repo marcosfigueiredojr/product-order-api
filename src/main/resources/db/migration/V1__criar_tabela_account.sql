@@ -1,4 +1,4 @@
-CREATE TABLE tb_user_account (
+CREATE TABLE IF NOT EXISTS tb_user_account (
     id BINARY(16) NOT NULL,
     username VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,

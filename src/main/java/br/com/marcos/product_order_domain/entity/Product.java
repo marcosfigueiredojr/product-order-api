@@ -3,16 +3,10 @@ package br.com.marcos.product_order_domain.entity;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "product")
+@Table(name = "tb_product")
 public class Product {
 
     @Id
@@ -40,34 +34,7 @@ public class Product {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    // 🔹 Construtor padrão (obrigatório para JPA)
-    public Product() {
-    }
-
-    // 🔹 Construtor completo (opcional)
-    public Product(
-            UUID id,
-            String name,
-            String description,
-            BigDecimal price,
-            String category,
-            Integer stockQuantity,
-            Instant createdAt,
-            Instant updatedAt
-    ) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.category = category;
-        this.stockQuantity = stockQuantity;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
-    /* ==========================
-       JPA CALLBACKS
-       ========================== */
+    public Product() {}
 
     @PrePersist
     public void prePersist() {
@@ -81,49 +48,25 @@ public class Product {
         this.updatedAt = Instant.now();
     }
 
-    /* ==========================
-       GETTERS AND SETTERS
-       ========================== */
+    // Getters e Setters corrigidos
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
-    public UUID getId() {
-        return id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getName() {
-        return name;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public String getDescription() {
-        return description;
-    }
+    public Integer getStockQuantity() { return stockQuantity; }
+    public void setStockQuantity(Integer stockQuantity) { this.stockQuantity = stockQuantity; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-	public void setStock(Integer stock) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public Integer getStock() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

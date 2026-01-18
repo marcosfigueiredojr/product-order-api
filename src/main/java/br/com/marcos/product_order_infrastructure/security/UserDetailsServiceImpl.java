@@ -1,15 +1,15 @@
 package br.com.marcos.product_order_infrastructure.security;
 
-import java.util.List;
-
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.context.annotation.Primary;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import br.com.marcos.product_order_domain.entity.User;
 import br.com.marcos.product_order_infrastructure.repository.UserRepository;
 
-@Service
+@Service("userDetailsService")
+@Primary
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository repository;
@@ -19,16 +19,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username)
-            throws UsernameNotFoundException {
-
-        User user = repository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPasswordHash(),
-                List.of(new SimpleGrantedAuthority(user.getRole().name()))
-        );
-      }
-   }
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // Como sua classe User JÁ implementa UserDetails, basta retorná-la diretamente.
+        // O Spring Security usará os métodos getPassword() e getAuthorities() que você configurou nela.
+        return repository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+    }
+}
