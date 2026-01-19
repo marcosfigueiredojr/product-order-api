@@ -28,6 +28,9 @@ public class Order {
 
     @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
     private UUID userId;
+    
+    @Column(name = "user_account_id", nullable = false, columnDefinition = "BINARY(16)")
+    private UUID userAccountId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -78,11 +81,13 @@ public class Order {
 
     @PrePersist
     public void prePersist() {
-        this.id = UUID.randomUUID();
+        if (this.id == null) {
+            this.id = UUID.randomUUID();
+        }
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
-
+    
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = Instant.now();
@@ -117,6 +122,12 @@ public class Order {
         this.userId = userId;
     }
 
+    public UUID getUserAccountId() {
+    	return userAccountId; 
+    	}
+    public void setUserAccountId(UUID userAccountId) { 
+    	this.userAccountId = userAccountId; 
+    }
     public OrderStatus getStatus() {
         return status;
     }
@@ -148,4 +159,14 @@ public class Order {
     public Instant getUpdatedAt() {
         return updatedAt;
     }
+
+	public void setUser(User user) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setCreatedAt(Instant now) {
+		// TODO Auto-generated method stub
+		
+	}
 }

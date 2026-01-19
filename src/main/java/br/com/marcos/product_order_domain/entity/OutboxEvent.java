@@ -122,4 +122,14 @@ public class OutboxEvent {
     public Instant getCreatedAt() {
         return createdAt;
     }
+
+	public void setAggregateId(String string) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setCreatedAt(Instant now) {
+		// TODO Auto-generated method stub
+		
+	}
 }
