@@ -45,4 +45,9 @@ public class ProductRequestDTO {
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+
+	public Object getActive() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

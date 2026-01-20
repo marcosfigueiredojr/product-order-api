@@ -12,6 +12,8 @@ import br.com.marcos.product_order_application.dto.ProductResponseDTO;
 import br.com.marcos.product_order_application.service.ProductService;
 import br.com.marcos.product_order_domain.entity.Product;
 import br.com.marcos.product_order_domain.exceptions.ResourceNotFoundException;
+import br.com.marcos.product_order_infrastructure.elasticsearch.mapper.ProductSearchMapper;
+import br.com.marcos.product_order_infrastructure.elasticsearch.repository.ProductSearchRepository;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 
 
@@ -20,9 +22,13 @@ import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository repository;
+    private final ProductSearchRepository searchRepository;
 
-    public ProductServiceImpl(ProductRepository repository) {
+
+    public ProductServiceImpl(ProductRepository repository,
+    		ProductSearchRepository searchRepository) {
         this.repository = repository;
+        this.searchRepository = searchRepository;
     }
 
     @Override
@@ -30,6 +36,9 @@ public class ProductServiceImpl implements ProductService {
         Product product = new Product();
         updateEntityFromDto(request, product);
         Product saved = repository.save(product);
+        searchRepository.save(
+                ProductSearchMapper.toDocument(saved));
+        
         return toResponse(saved);
     }
 
@@ -38,6 +47,9 @@ public class ProductServiceImpl implements ProductService {
         Product product = repository.findById(id)
                  .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         updateEntityFromDto(request, product);
+        searchRepository.save(
+        ProductSearchMapper.toDocument(product)
+        );
         return toResponse(repository.save(product));
     }
 
@@ -47,6 +59,7 @@ public class ProductServiceImpl implements ProductService {
         entity.setPrice(dto.getPrice());
         entity.setStockQuantity(dto.getStock());  
         entity.setCategory(dto.getCategory());
+        entity.setActive(dto.getActive());
     }
 
     private ProductResponseDTO toResponse(Product product) {
@@ -84,6 +97,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ResourceNotFoundException("Product not found");
         }
         repository.deleteById(id);
+        searchRepository.deleteById(id);
     }
 
     /* =========================

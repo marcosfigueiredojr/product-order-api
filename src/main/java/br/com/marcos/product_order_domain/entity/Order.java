@@ -39,6 +39,11 @@ public class Order {
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal total;
 
+    // flag idempotencia
+    @Column(name = "stock_updated", nullable = false)
+    private boolean stockUpdated = false;
+
+
     @OneToMany(
         mappedBy = "order",
         cascade = CascadeType.ALL,

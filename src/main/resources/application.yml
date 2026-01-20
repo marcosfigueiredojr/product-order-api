@@ -1,4 +1,15 @@
 spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: order-stock-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
   datasource:
     url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false&serverTimezone=UTC
     username: root
@@ -12,22 +23,22 @@ spring:
 
   jpa:
     hibernate:
-      # Use 'validate' ou 'none' em produção; 'update' apenas em desenvolvimento
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-        # Essencial para que o Hibernate entenda UUID como BINARY(16) no MySQL
+        # Essencial para mapear UUID corretamente como BINARY(16)
         type:
           preferred_uuid_jdbc_type: BINARY
-    # Desabilita o aviso de "open-in-view" no log
     open-in-view: false
+
+    elasticsearch:
+       uris: http://localhost:9200
 
 server:
   port: 8080
 
-# Melhora a visibilidade de erros durante o login no console do Eclipse
 logging:
   level:
     org.springframework.security: DEBUG

@@ -132,4 +132,9 @@ public class OutboxEvent {
 		// TODO Auto-generated method stub
 		
 	}
+
+	public String getType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
