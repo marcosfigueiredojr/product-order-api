@@ -8,7 +8,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Document(indexName = "products")
+@Document(indexName = "ecommerce")
 public class ProductDocument {
 
     @Id

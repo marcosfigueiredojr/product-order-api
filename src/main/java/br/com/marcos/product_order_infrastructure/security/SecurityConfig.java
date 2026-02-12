@@ -53,13 +53,10 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        // Corrigido: Passamos o userDetailsService diretamente no construtor
-        // Isso resolve os erros de 'undefined' vistos no seu Eclipse
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(this.userDetailsService);
-        
-        // Configuramos o encoder de BCrypt
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        // Forma correta de configurar os serviços:
+        authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
-        
         return authProvider;
     }
     

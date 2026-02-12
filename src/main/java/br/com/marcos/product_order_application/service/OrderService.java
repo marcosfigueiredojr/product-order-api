@@ -10,4 +10,8 @@ public interface OrderService {
     OrderResponseDTO createOrder(CreateOrderRequestDTO request);
 
     void payOrder(UUID orderId);
+
+	void updateStock(UUID orderId);
+
+	void updateStockOrder(UUID orderId);
 }

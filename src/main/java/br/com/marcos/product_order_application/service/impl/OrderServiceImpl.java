@@ -58,6 +58,7 @@ public class OrderServiceImpl implements OrderService {
         this.userRepository = userRepository;
         this.outboxRepository = outboxRepository;
     }
+    
 
     @Override
     @PreAuthorize("hasRole('USER')")
@@ -67,7 +68,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Order order = new Order();
-        order.setUser(user);
+        order.setUserId(user.getId());
         order.setUserId(request.getUserAccountId());
         order.setUserAccountId(request.getUserAccountId());
         order.setStatus(OrderStatus.PENDENTE);
@@ -105,12 +106,47 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setTotal(total);
-     // Salva o pedido primeiro para gerar o ID que será usado nos itens
         Order savedOrder = orderRepository.save(order);
         itemRepository.saveAll(items);
         return toResponse(savedOrder, items);
     }
 
+    @Override
+    @Transactional
+    public void updateStockOrder(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        if (order.isStockUpdated()) {
+            return;
+        }
+
+        if (order.getStatus() != OrderStatus.PAGO) {
+            throw new BusinessException("Order must be PAID to update stock");
+        }
+
+        List<OrderItem> items = itemRepository.findByOrderId(orderId);
+
+        for (OrderItem item : items) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+            int newStock = product.getStockQuantity() - item.getQuantity();
+
+            if (newStock < 0) {
+                throw new BusinessException("Insufficient stock for product: " + product.getName());
+            }
+
+            product.setStockQuantity(newStock);
+            productRepository.save(product);
+        }
+
+        order.setStockUpdated(true);
+        orderRepository.save(order);
+    }
+
+    
     @Override
     @PreAuthorize("hasRole('USER')")
     public void payOrder(UUID orderId) {
@@ -128,28 +164,47 @@ public class OrderServiceImpl implements OrderService {
         createOutboxEvent(order);
     }
 
+    /**
+     * Este método é chamado pelo OrderPaidConsumer após o evento de pagamento.
+     * Ele localiza o pedido e processa a baixa de todos os itens vendidos.
+     */
+    @Override
+    @Transactional
+    public void updateStock(UUID orderId) {
+        // Busca o pedido para garantir que ele existe
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found for ID: " + orderId));
+
+        // Reutiliza a lógica de idempotência e baixa de itens do updateStockOrder
+        // para manter o comportamento consistente no sistema
+        updateStockOrder(orderId);
+    }
     /* =========================
        OUTBOX
        ========================= */
 
     private void createOutboxEvent(Order order) {
         try {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("orderId", order.getId());
-            payload.put("paidAt", Instant.now());
+            Map<String, Object> payloadMap = new HashMap<>();
+            payloadMap.put("orderId", order.getId());
+            payloadMap.put("paidAt", Instant.now().toString());
 
             OutboxEvent event = new OutboxEvent();
+          
             event.setAggregateType("Order");
-            event.setAggregateId(order.getId().toString());
+            event.setAggregateId(order.getId().toString()); // Convertendo UUID do pedido para String
             event.setEventType("order.paid");
-            event.setPayload(objectMapper.writeValueAsString(payload));
-            event.setStatus("PENDING");
-            event.setCreatedAt(Instant.now());
- 
+            event.setPayload(objectMapper.writeValueAsString(payloadMap));
+            event.setStatus("PENDENTE");
+            
+           event.setCreatedAt(Instant.now());
+
             outboxRepository.save(event);
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create outbox event");
+            // Log do erro real no console para você saber o que falhou (importante!)
+            System.err.println("Erro detalhado ao criar Outbox: " + e.getMessage());
+            throw new RuntimeException("Failed to create outbox event: " + e.getMessage());
         }
     }
 

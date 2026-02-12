@@ -27,12 +27,12 @@ public class OutboxPublisher {
     @Transactional
     public void publish() {
 
-        List<OutboxEvent> events = repository.findByStatus("PENDING");
+        List<OutboxEvent> events = repository.findByStatus("PENDENTE");
 
         for (OutboxEvent event : events) {
             try {
                 producer.send(
-                        event.getType(),
+                        event.getEventType(),
                         event.getAggregateId(),
                         event.getPayload()
                 );

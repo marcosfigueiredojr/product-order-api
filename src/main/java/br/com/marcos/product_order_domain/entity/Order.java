@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import br.com.marcos.product_order_domain.enums.OrderStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -23,12 +26,15 @@ import jakarta.persistence.Table;
 public class Order {
 
     @Id
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
     private UUID userId;
     
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "user_account_id", nullable = false, columnDefinition = "BINARY(16)")
     private UUID userAccountId;
 
@@ -39,10 +45,8 @@ public class Order {
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal total;
 
-    // flag idempotencia
     @Column(name = "stock_updated", nullable = false)
     private boolean stockUpdated = false;
-
 
     @OneToMany(
         mappedBy = "order",
@@ -57,14 +61,13 @@ public class Order {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    // 🔹 Construtor padrão (obrigatório para JPA)
     public Order() {
     }
 
-    // 🔹 Construtor completo (opcional, útil em testes)
     public Order(
             UUID id,
             UUID userId,
+            UUID userAccountId,
             OrderStatus status,
             BigDecimal total,
             List<OrderItem> items,
@@ -73,6 +76,7 @@ public class Order {
     ) {
         this.id = id;
         this.userId = userId;
+        this.userAccountId = userAccountId;
         this.status = status;
         this.total = total;
         this.items = items != null ? items : new ArrayList<>();
@@ -80,16 +84,14 @@ public class Order {
         this.updatedAt = updatedAt;
     }
 
-    /* ==========================
-       JPA CALLBACKS
-       ========================== */
-
     @PrePersist
     public void prePersist() {
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
-        this.createdAt = Instant.now();
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
         this.updatedAt = Instant.now();
     }
     
@@ -98,80 +100,37 @@ public class Order {
         this.updatedAt = Instant.now();
     }
 
-    /* ==========================
-       DOMAIN METHODS
-       ========================== */
-
     public void addItem(OrderItem item) {
         item.setOrder(this);
         this.items.add(item);
     }
 
-    /* ==========================
-       GETTERS AND SETTERS
-       ========================== */
+    /* GETTERS AND SETTERS */
 
-    public UUID getId() {
-        return id;
-    }
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+    public UUID getUserId() { return userId; }
+    public void setUserId(UUID userId) { this.userId = userId; }
 
-    public UUID getUserId() {
-        return userId;
-    }
+    public UUID getUserAccountId() { return userAccountId; }
+    public void setUserAccountId(UUID userAccountId) { this.userAccountId = userAccountId; }
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
+    public OrderStatus getStatus() { return status; }
+    public void setStatus(OrderStatus status) { this.status = status; }
 
-    public UUID getUserAccountId() {
-    	return userAccountId; 
-    	}
-    public void setUserAccountId(UUID userAccountId) { 
-    	this.userAccountId = userAccountId; 
-    }
-    public OrderStatus getStatus() {
-        return status;
-    }
+    public BigDecimal getTotal() { return total; }
+    public void setTotal(BigDecimal total) { this.total = total; }
 
-    public void setStatus(OrderStatus status) {
-        this.status = status;
-    }
+    public boolean isStockUpdated() { return stockUpdated; }
+    public void setStockUpdated(boolean stockUpdated) { this.stockUpdated = stockUpdated; }
 
-    public BigDecimal getTotal() {
-        return total;
-    }
+    public List<OrderItem> getItems() { return items; }
+    public void setItems(List<OrderItem> items) { this.items = items; }
 
-    public void setTotal(BigDecimal total) {
-        this.total = total;
-    }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
-    public List<OrderItem> getItems() {
-        return items;
-    }
-
-    public void setItems(List<OrderItem> items) {
-        this.items = items;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-	public void setUser(User user) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void setCreatedAt(Instant now) {
-		// TODO Auto-generated method stub
-		
-	}
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

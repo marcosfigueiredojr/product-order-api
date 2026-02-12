@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS tb_outbox_event (
     aggregate_id BINARY(16) NOT NULL,
     event_type VARCHAR(100) NOT NULL,
     payload JSON NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDENTE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT pk_tb_outbox_event PRIMARY KEY (id)

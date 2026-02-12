@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +27,7 @@ public class User implements UserDetails {
     private static final long serialVersionUID = 1L;
 
     @Id
+    @JdbcTypeCode(SqlTypes.BINARY) // CORREÇÃO: Força o Hibernate a tratar o UUID como binário puro
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
@@ -102,7 +105,6 @@ public class User implements UserDetails {
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
-    public String getUsernameField() { return username; } // Nome alterado para evitar conflito com UserDetails
     public void setUsername(String username) { this.username = username; }
 
     public String getPasswordHash() { return passwordHash; }

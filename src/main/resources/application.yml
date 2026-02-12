@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: product-order-api
+
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -9,38 +12,46 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
 
   datasource:
-    url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false&serverTimezone=UTC
-    username: root
-    password: Java@1979
+    url: jdbc:mysql://localhost:3306/ecommerce?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    username: user_app
+    password: "Java@1979"
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   flyway:
     enabled: true
     baseline-on-migrate: true
+    out-of-order: false
     locations: classpath:db/migration
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-        # Essencial para mapear UUID corretamente como BINARY(16)
-        type:
-          preferred_uuid_jdbc_type: BINARY
+      "[hibernate.format_sql]": true
+      "[hibernate.type.preferred_uuid_jdbc_type]": VARBINARY
     open-in-view: false
 
-    elasticsearch:
-       uris: http://localhost:9200
+  elasticsearch:
+    uris: http://localhost:9200
+    connection-timeout: 10s
+    socket-timeout: 60s
 
 server:
   port: 8080
+  error:
+    include-message: always
+    include-stacktrace: always
 
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: INFO
+    "[org.springframework.web]": DEBUG
+    "[org.hibernate.SQL]": DEBUG
+    "[org.hibernate.type.descriptor.sql.BasicBinder]": TRACE
+    "[br.com.marcos]": DEBUG
+    "[org.apache.kafka]": WARN

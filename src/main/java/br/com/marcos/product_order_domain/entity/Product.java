@@ -3,6 +3,10 @@ package br.com.marcos.product_order_domain.entity;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -10,6 +14,7 @@ import jakarta.persistence.*;
 public class Product {
 
     @Id
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 

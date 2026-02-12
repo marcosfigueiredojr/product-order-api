@@ -1,7 +1,6 @@
 package br.com.marcos.product_order_domain.entity;
 
 import jakarta.persistence.*;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -10,38 +9,32 @@ import java.util.UUID;
 public class OutboxEvent {
 
     @Id
-    @Column(columnDefinition = "BINARY(16)")
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Alinhado com o AUTO_INCREMENT do MySQL
+    private Long id;
 
     @Column(name = "aggregate_type", nullable = false, length = 100)
     private String aggregateType;
 
-    @Column(name = "aggregate_id", nullable = false, columnDefinition = "BINARY(16)")
-    private UUID aggregateId;
+    @Column(name = "aggregate_id", nullable = false)
+    private String aggregateId; // Alterado para String para evitar conflitos de conversão BINARY
 
     @Column(name = "event_type", nullable = false, length = 100)
-    private String eventType; // order.paid, product.created, etc
+    private String eventType;
 
-    @Column(columnDefinition = "JSON", nullable = false)
+    @Column(columnDefinition = "LONGTEXT", nullable = false) // LONGTEXT garante que caiba o JSON
     private String payload;
 
-    @Column(nullable = false, length = 20)
-    private String status; // PENDING | SENT | ERROR
+    @Column(nullable = false, length = 50) // Aumentado para 50 caracteres conforme seu banco
+    private String status; 
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    /* =========================
-       Constructors
-       ========================= */
-
-    public OutboxEvent() {
-        // JPA default constructor
-    }
+    public OutboxEvent() {}
 
     public OutboxEvent(
             String aggregateType,
-            UUID aggregateId,
+            String aggregateId,
             String eventType,
             String payload,
             String status
@@ -53,29 +46,21 @@ public class OutboxEvent {
         this.status = status;
     }
 
-    /* =========================
-       JPA callbacks
-       ========================= */
-
     @PrePersist
     protected void prePersist() {
-        this.id = UUID.randomUUID();
         this.createdAt = Instant.now();
-
         if (this.status == null) {
-            this.status = "PENDING";
+            this.status = "PENDENTE";
         }
     }
 
-    /* =========================
-       Getters and Setters
-       ========================= */
+    /* Getters and Setters Atualizados */
 
-    public UUID getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -87,11 +72,11 @@ public class OutboxEvent {
         this.aggregateType = aggregateType;
     }
 
-    public UUID getAggregateId() {
+    public String getAggregateId() {
         return aggregateId;
     }
 
-    public void setAggregateId(UUID aggregateId) {
+    public void setAggregateId(String aggregateId) {
         this.aggregateId = aggregateId;
     }
 
@@ -123,18 +108,7 @@ public class OutboxEvent {
         return createdAt;
     }
 
-	public void setAggregateId(String string) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void setCreatedAt(Instant now) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public String getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
 }
