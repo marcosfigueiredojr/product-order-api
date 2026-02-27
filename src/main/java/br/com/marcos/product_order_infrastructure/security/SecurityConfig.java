@@ -34,13 +34,19 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/auth/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/products/**").hasAnyRole("USER", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/products/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.PUT, "/products/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
-                    .anyRequest().authenticated()
-                )
+                // 1. Liberações públicas (Sempre no topo)
+                .requestMatchers("/actuator/**").permitAll() 
+                .requestMatchers("/auth/**").permitAll()
+                
+                // 2. Regras específicas de produtos
+                .requestMatchers(HttpMethod.GET, "/products/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/products/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/products/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
+                
+                // 3. Qualquer outra requisição exige login (Sempre por último)
+                .anyRequest().authenticated()
+            )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -54,7 +60,6 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        // Forma correta de configurar os serviços:
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;

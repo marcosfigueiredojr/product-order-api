@@ -32,17 +32,24 @@ import br.com.marcos.product_order_infrastructure.repository.OrderRepository;
 import br.com.marcos.product_order_infrastructure.repository.OutboxEventRepository;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 import br.com.marcos.product_order_infrastructure.repository.UserRepository;
+import io.micrometer.core.annotation.Timed;
+import br.com.marcos.product_order_infrastructure.metrics.OrderMetrics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import br.com.marcos.product_order_infrastructure.security.SecurityUtils;
 
 @Service
 @Transactional
 public class OrderServiceImpl implements OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
+
     private final OrderRepository orderRepository;
     private final OrderItemRepository itemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final OutboxEventRepository outboxRepository;
+    private final OrderMetrics orderMetrics;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public OrderServiceImpl(
@@ -50,13 +57,15 @@ public class OrderServiceImpl implements OrderService {
             OrderItemRepository itemRepository,
             ProductRepository productRepository,
             UserRepository userRepository,
-            OutboxEventRepository outboxRepository
+            OutboxEventRepository outboxRepository,
+            OrderMetrics orderMetrics
     ) {
         this.orderRepository = orderRepository;
         this.itemRepository = itemRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.outboxRepository = outboxRepository;
+        this.orderMetrics = orderMetrics;
     }
     
 
@@ -64,11 +73,11 @@ public class OrderServiceImpl implements OrderService {
     @PreAuthorize("hasRole('USER')")
     public OrderResponseDTO createOrder(CreateOrderRequestDTO request) {
 
+        log.info("Creating order for userAccountId={}", request.getUserAccountId());
         User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Order order = new Order();
-        order.setUserId(user.getId());
         order.setUserId(request.getUserAccountId());
         order.setUserAccountId(request.getUserAccountId());
         order.setStatus(OrderStatus.PENDENTE);
@@ -83,6 +92,7 @@ public class OrderServiceImpl implements OrderService {
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
             if (product.getStockQuantity() < itemRequest.getQuantity()) {
+                log.warn("Stock insufficient for product: {}", product.getName());
                 order.setStatus(OrderStatus.CANCELADO);
                 orderRepository.save(order);
                 throw new BusinessException(
@@ -108,6 +118,9 @@ public class OrderServiceImpl implements OrderService {
         order.setTotal(total);
         Order savedOrder = orderRepository.save(order);
         itemRepository.saveAll(items);
+        orderMetrics.incrementOrderCreated();
+        log.info("Order created id={} total={}", savedOrder.getId(), savedOrder.getTotal());
+
         return toResponse(savedOrder, items);
     }
 
@@ -149,6 +162,7 @@ public class OrderServiceImpl implements OrderService {
     
     @Override
     @PreAuthorize("hasRole('USER')")
+    @Timed(value = "order.payment.time", histogram = true)
     public void payOrder(UUID orderId) {
 
         Order order = orderRepository.findById(orderId)

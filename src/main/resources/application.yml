@@ -41,6 +41,20 @@ spring:
     connection-timeout: 10s
     socket-timeout: 60s
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: product-order-api
+
+
 server:
   port: 8080
   error:
