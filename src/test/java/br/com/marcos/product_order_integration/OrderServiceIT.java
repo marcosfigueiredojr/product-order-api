@@ -19,7 +19,7 @@ import br.com.marcos.product_order_domain.enums.OrderStatus;
 import br.com.marcos.product_order_infrastructure.repository.OrderRepository;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 
-@SpringBootTest
+@SpringBootTest(classes = br.com.marcos.product_order.ProductOrderApiApplication.class)
 class OrderServiceIT extends AbstractIntegrationTest {
 
     @Autowired

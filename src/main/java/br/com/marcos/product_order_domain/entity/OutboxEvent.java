@@ -2,7 +2,6 @@ package br.com.marcos.product_order_domain.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tb_outbox_event")

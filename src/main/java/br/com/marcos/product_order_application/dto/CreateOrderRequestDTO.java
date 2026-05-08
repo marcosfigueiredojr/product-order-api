@@ -13,25 +13,48 @@ public class CreateOrderRequestDTO {
     @JsonProperty("user_account_id") 
     private UUID userAccountId;
 
-    @JsonProperty("user_id") // ADICIONE ESTE CAMPO
+    @JsonProperty("user_id")
     private UUID userId;
     
-   	@NotEmpty(message = "A lista de itens não deve estar vazia")
-    @Valid // Importante para validar os campos dentro de cada item da lista
+    @NotEmpty(message = "A lista de itens não deve estar vazia")
+    @Valid 
     private List<OrderItemRequestDTO> items;
 
+    // --- CONSTRUTORES ---
+
+    // Construtor padrão necessário para frameworks (JSON/Spring)
+    public CreateOrderRequestDTO() {
+    }
+
+    // Construtor que seus testes estão chamando
+    public CreateOrderRequestDTO(UUID userAccountId, List<OrderItemRequestDTO> items) {
+        this.userAccountId = userAccountId;
+        this.items = items;
+    }
+
+    // --- GETTERS E SETTERS ---
+
     public UUID getUserAccountId() {
-    	return userAccountId; 
-    	}
+        return userAccountId; 
+    }
+    
     public void setUserAccountId(UUID userAccountId) {
-    	this.userAccountId = userAccountId;
-    	}
+        this.userAccountId = userAccountId;
+    }
+    
     public UUID getUserId() {
-		return userId;
-	}
-	public void setUserId(UUID userId) {
-		this.userId = userId;
-	}
-    public List<OrderItemRequestDTO> getItems() { return items; }
-    public void setItems(List<OrderItemRequestDTO> items) { this.items = items; }
+        return userId;
+    }
+    
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+    
+    public List<OrderItemRequestDTO> getItems() { 
+        return items; 
+    }
+    
+    public void setItems(List<OrderItemRequestDTO> items) { 
+        this.items = items; 
+    }
 }

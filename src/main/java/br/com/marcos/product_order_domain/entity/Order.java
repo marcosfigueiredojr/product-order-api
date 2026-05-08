@@ -10,6 +10,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import br.com.marcos.product_order_domain.enums.OrderStatus;
+import br.com.marcos.product_order_domain.exceptions.BusinessException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,7 +22,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
-@Entity
+@Entity(name = "OrderEntity")
 @Table(name = "tb_orders")
 public class Order {
 
@@ -33,7 +34,7 @@ public class Order {
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
     private UUID userId;
-    
+
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "user_account_id", nullable = false, columnDefinition = "BINARY(16)")
     private UUID userAccountId;
@@ -43,7 +44,7 @@ public class Order {
     private OrderStatus status;
 
     @Column(nullable = false, precision = 19, scale = 4)
-    private BigDecimal total;
+    private BigDecimal total = BigDecimal.ZERO;
 
     @Column(name = "stock_updated", nullable = false)
     private boolean stockUpdated = false;
@@ -55,82 +56,117 @@ public class Order {
     )
     private List<OrderItem> items = new ArrayList<>();
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public Order() {
+    protected Order() {
+        // JPA
     }
 
-    public Order(
-            UUID id,
-            UUID userId,
-            UUID userAccountId,
-            OrderStatus status,
-            BigDecimal total,
-            List<OrderItem> items,
-            Instant createdAt,
-            Instant updatedAt
-    ) {
-        this.id = id;
+    public Order(UUID userId, UUID userAccountId) {
         this.userId = userId;
         this.userAccountId = userAccountId;
-        this.status = status;
-        this.total = total;
-        this.items = items != null ? items : new ArrayList<>();
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.status = OrderStatus.PENDENTE;
+;
     }
+
+    /* =======================
+       Ciclo de vida JPA
+       ======================= */
 
     @PrePersist
     public void prePersist() {
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
-        if (this.createdAt == null) {
-            this.createdAt = Instant.now();
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
+
+        if (this.status == null) {
+           this.status = OrderStatus.PENDENTE;
         }
-        this.updatedAt = Instant.now();
+
+        recalculateTotal();
     }
-    
+
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = Instant.now();
+        recalculateTotal();
     }
+
+    /* =======================
+       Regras de domínio
+       ======================= */
 
     public void addItem(OrderItem item) {
         item.setOrder(this);
         this.items.add(item);
+        recalculateTotal();
     }
 
-    /* GETTERS AND SETTERS */
+    public void removeItem(OrderItem item) {
+        this.items.remove(item);
+        recalculateTotal();
+    }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    private void recalculateTotal() {
+        this.total = this.items.stream()
+                .map(OrderItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
-    public UUID getUserId() { return userId; }
-    public void setUserId(UUID userId) { this.userId = userId; }
+    public void markStockUpdated() {
+     if (this.stockUpdated) {
+         throw new BusinessException("Stock already updated");
+     }
+     this.stockUpdated = true;
+    }
+    
+    /* =======================
+       Getters (setters mínimos)
+       ======================= */
 
-    public UUID getUserAccountId() { return userAccountId; }
-    public void setUserAccountId(UUID userAccountId) { this.userAccountId = userAccountId; }
+    public UUID getId() {
+        return id;
+    }
 
-    public OrderStatus getStatus() { return status; }
-    public void setStatus(OrderStatus status) { this.status = status; }
+    public UUID getUserId() {
+        return userId;
+    }
 
-    public BigDecimal getTotal() { return total; }
-    public void setTotal(BigDecimal total) { this.total = total; }
+    public UUID getUserAccountId() {
+        return userAccountId;
+    }
 
-    public boolean isStockUpdated() { return stockUpdated; }
-    public void setStockUpdated(boolean stockUpdated) { this.stockUpdated = stockUpdated; }
+    public OrderStatus getStatus() {
+        return status;
+    }
 
-    public List<OrderItem> getItems() { return items; }
-    public void setItems(List<OrderItem> items) { this.items = items; }
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
 
-    public Instant getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public BigDecimal getTotal() {
+        return total;
+    }
 
-    public Instant getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public boolean isStockUpdated() {
+        return stockUpdated;
+    }
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
 }

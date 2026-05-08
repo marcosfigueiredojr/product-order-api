@@ -17,7 +17,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     @Query("""
         SELECT o
-        FROM Order o
+        FROM OrderEntity o
         WHERE o.status = :status
           AND o.createdAt BETWEEN :start AND :end
     """)

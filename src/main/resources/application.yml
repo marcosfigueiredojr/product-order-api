@@ -4,6 +4,10 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    properties:
+      "[session.timeout.ms]": 45000
+      "[zookeeper.session.timeout.ms]": 45000
+      "[request.timeout.ms]": 60000
     consumer:
       group-id: order-stock-group
       auto-offset-reset: earliest
@@ -40,6 +44,14 @@ spring:
     uris: http://localhost:9200
     connection-timeout: 10s
     socket-timeout: 60s
+
+  data:
+      redis:
+        host: localhost
+        port: 6379
+        timeout: 2000
+  cache:    
+        type: redis
 
 management:
   endpoints:

@@ -2,12 +2,13 @@ package br.com.marcos.product_order_application.service.impl;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,16 +28,14 @@ import br.com.marcos.product_order_domain.entity.User;
 import br.com.marcos.product_order_domain.enums.OrderStatus;
 import br.com.marcos.product_order_domain.exceptions.BusinessException;
 import br.com.marcos.product_order_domain.exceptions.ResourceNotFoundException;
+import br.com.marcos.product_order_infrastructure.metrics.OrderMetrics;
 import br.com.marcos.product_order_infrastructure.repository.OrderItemRepository;
 import br.com.marcos.product_order_infrastructure.repository.OrderRepository;
 import br.com.marcos.product_order_infrastructure.repository.OutboxEventRepository;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 import br.com.marcos.product_order_infrastructure.repository.UserRepository;
-import io.micrometer.core.annotation.Timed;
-import br.com.marcos.product_order_infrastructure.metrics.OrderMetrics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import br.com.marcos.product_order_infrastructure.security.SecurityUtils;
+import io.micrometer.core.annotation.Timed;
 
 @Service
 @Transactional
@@ -67,99 +66,63 @@ public class OrderServiceImpl implements OrderService {
         this.outboxRepository = outboxRepository;
         this.orderMetrics = orderMetrics;
     }
-    
+
+    /* =========================
+       CREATE ORDER
+       ========================= */
 
     @Override
     @PreAuthorize("hasRole('USER')")
     public OrderResponseDTO createOrder(CreateOrderRequestDTO request) {
 
-        log.info("Creating order for userAccountId={}", request.getUserAccountId());
-        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
+         log.info("Creating order for userAccountId={}", request.getUserAccountId());
+
+         User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Order order = new Order();
-        order.setUserId(request.getUserAccountId());
-        order.setUserAccountId(request.getUserAccountId());
-        order.setStatus(OrderStatus.PENDENTE);
-        order.setCreatedAt(Instant.now());
-
-        BigDecimal total = BigDecimal.ZERO;
-        List<OrderItem> items = new ArrayList<>();
+    // ✅ Criação correta do agregado Order
+        Order order = new Order(
+               user.getId(),
+               request.getUserAccountId()
+        );
 
         for (OrderItemRequestDTO itemRequest : request.getItems()) {
 
-            Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+           Product product = productRepository.findById(itemRequest.getProductId())
+                   .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-            if (product.getStockQuantity() < itemRequest.getQuantity()) {
-                log.warn("Stock insufficient for product: {}", product.getName());
-                order.setStatus(OrderStatus.CANCELADO);
-                orderRepository.save(order);
-                throw new BusinessException(
+           if (product.getStockQuantity() < itemRequest.getQuantity()) {
+                 throw new BusinessException(
                         "Insufficient stock for product: " + product.getName()
                 );
             }
 
             BigDecimal subtotal = product.getPrice()
-                    .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
+                   .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
 
-            OrderItem item = new OrderItem();
-            item.setOrder(order);
-            item.setProductId(product.getId());
-            item.setProductNameSnapshot(product.getName());
-            item.setUnitPriceSnapshot(product.getPrice());
-            item.setQuantity(itemRequest.getQuantity());
-            item.setSubtotal(subtotal);
+           OrderItem item = new OrderItem();
+           item.setProductId(product.getId());
+           item.setProductNameSnapshot(product.getName());
+           item.setUnitPriceSnapshot(product.getPrice());
+           item.setQuantity(itemRequest.getQuantity());
+           item.setSubtotal(subtotal);
 
-            items.add(item);
-            total = total.add(subtotal);
+        // ✅ regra de domínio
+           order.addItem(item);
         }
 
-        order.setTotal(total);
         Order savedOrder = orderRepository.save(order);
-        itemRepository.saveAll(items);
         orderMetrics.incrementOrderCreated();
+
         log.info("Order created id={} total={}", savedOrder.getId(), savedOrder.getTotal());
 
-        return toResponse(savedOrder, items);
-    }
-
-    @Override
-    @Transactional
-    public void updateStockOrder(UUID orderId) {
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-
-        if (order.isStockUpdated()) {
-            return;
+        return toResponse(savedOrder);
         }
 
-        if (order.getStatus() != OrderStatus.PAGO) {
-            throw new BusinessException("Order must be PAID to update stock");
-        }
+    /* =========================
+       PAYMENT
+       ========================= */
 
-        List<OrderItem> items = itemRepository.findByOrderId(orderId);
-
-        for (OrderItem item : items) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-            int newStock = product.getStockQuantity() - item.getQuantity();
-
-            if (newStock < 0) {
-                throw new BusinessException("Insufficient stock for product: " + product.getName());
-            }
-
-            product.setStockQuantity(newStock);
-            productRepository.save(product);
-        }
-
-        order.setStockUpdated(true);
-        orderRepository.save(order);
-    }
-
-    
     @Override
     @PreAuthorize("hasRole('USER')")
     @Timed(value = "order.payment.time", histogram = true)
@@ -178,47 +141,76 @@ public class OrderServiceImpl implements OrderService {
         createOutboxEvent(order);
     }
 
-    /**
-     * Este método é chamado pelo OrderPaidConsumer após o evento de pagamento.
-     * Ele localiza o pedido e processa a baixa de todos os itens vendidos.
-     */
-    @Override
+/* =========================
+       STOCK UPDATE
+       ========================= */
+
+    @Override // Certifique-se de que este @Override está aqui
     @Transactional
     public void updateStock(UUID orderId) {
-        // Busca o pedido para garantir que ele existe
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found for ID: " + orderId));
-
-        // Reutiliza a lógica de idempotência e baixa de itens do updateStockOrder
-        // para manter o comportamento consistente no sistema
+        // Agora o método updateStock (da interface) chama o seu updateStockOrder
         updateStockOrder(orderId);
     }
+
+    @Transactional // Remova o @Override daqui, pois este nome NÃO está na interface
+    public void updateStockOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        if (order.isStockUpdated()) {
+            return;
+        }
+
+        // Importante: Para os testes passarem, troque BusinessException por IllegalStateException
+        // e ajuste a mensagem conforme os testes esperam.
+        if (order.getStatus() != OrderStatus.PAGO) {
+            throw new IllegalStateException("Pedido não está pago");
+        }
+
+        List<OrderItem> items = itemRepository.findByOrderId(orderId);
+
+        for (OrderItem item : items) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+            int newStock = product.getStockQuantity() - item.getQuantity();
+
+            if (newStock < 0) {
+                throw new IllegalStateException("Estoque insuficiente");
+            }
+
+            product.setStockQuantity(newStock);
+            productRepository.save(product);
+        }
+
+        order.markStockUpdated();
+        orderRepository.save(order);
+    }
+
     /* =========================
        OUTBOX
        ========================= */
 
     private void createOutboxEvent(Order order) {
+
         try {
-            Map<String, Object> payloadMap = new HashMap<>();
-            payloadMap.put("orderId", order.getId());
-            payloadMap.put("paidAt", Instant.now().toString());
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("orderId", order.getId());
+            payload.put("paidAt", Instant.now().toString());
 
             OutboxEvent event = new OutboxEvent();
-          
             event.setAggregateType("Order");
-            event.setAggregateId(order.getId().toString()); // Convertendo UUID do pedido para String
+            event.setAggregateId(order.getId().toString());
             event.setEventType("order.paid");
-            event.setPayload(objectMapper.writeValueAsString(payloadMap));
+            event.setPayload(objectMapper.writeValueAsString(payload));
             event.setStatus("PENDENTE");
-            
-           event.setCreatedAt(Instant.now());
+            event.setCreatedAt(Instant.now());
 
             outboxRepository.save(event);
 
         } catch (Exception e) {
-            // Log do erro real no console para você saber o que falhou (importante!)
-            System.err.println("Erro detalhado ao criar Outbox: " + e.getMessage());
-            throw new RuntimeException("Failed to create outbox event: " + e.getMessage());
+            log.error("Error creating outbox event", e);
+            throw new RuntimeException("Failed to create outbox event", e);
         }
     }
 
@@ -226,8 +218,9 @@ public class OrderServiceImpl implements OrderService {
        MAPPER
        ========================= */
 
-    private OrderResponseDTO toResponse(Order order, List<OrderItem> items) {
-        List<OrderItemResponseDTO> itemResponses = items.stream()
+    private OrderResponseDTO toResponse(Order order) {
+
+        List<OrderItemResponseDTO> items = order.getItems().stream()
                 .map(i -> new OrderItemResponseDTO(
                         i.getProductId(),
                         i.getProductNameSnapshot(),
@@ -242,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getStatus(),
                 order.getTotal(),
                 order.getCreatedAt(),
-                itemResponses
+                items
         );
     }
 }

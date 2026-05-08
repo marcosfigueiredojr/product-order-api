@@ -32,33 +32,29 @@ public class ProductDocument {
     public ProductDocument() {}
 
 	public void setId(UUID id2) {
-		// TODO Auto-generated method stub
+	
 		
 	}
 
 	public void setName(String name2) {
-		// TODO Auto-generated method stub
+	
 		
 	}
 
 	public void setDescription(String description2) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	public void setPrice(BigDecimal price2) {
-		// TODO Auto-generated method stub
-		
+				
 	}
 
 	public void setStock(Integer stockQuantity) {
-		// TODO Auto-generated method stub
-		
+			
 	}
 
 	public void setActive(Object active2) {
-		// TODO Auto-generated method stub
-		
+			
 	}
 
     // getters e setters

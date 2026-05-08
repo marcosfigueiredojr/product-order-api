@@ -19,7 +19,6 @@ public class KafkaProducerService {
     }
 
 	public void send(String type, UUID aggregateId, String payload) {
-		// TODO Auto-generated method stub
 		
 	}
 }

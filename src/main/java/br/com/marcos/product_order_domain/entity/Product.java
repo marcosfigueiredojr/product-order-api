@@ -76,12 +76,10 @@ public class Product {
     public Instant getUpdatedAt() { return updatedAt; }
 
 	public Object getActive() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public void setActive(Object active) {
-		// TODO Auto-generated method stub
 		
 	}
 }

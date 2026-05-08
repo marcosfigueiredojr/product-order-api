@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +19,6 @@ import br.com.marcos.product_order_infrastructure.elasticsearch.mapper.ProductSe
 import br.com.marcos.product_order_infrastructure.elasticsearch.repository.ProductSearchRepository;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
 
-
 @Service
 @Transactional
 public class ProductServiceImpl implements ProductService {
@@ -24,40 +26,109 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository repository;
     private final ProductSearchRepository searchRepository;
 
-
     public ProductServiceImpl(ProductRepository repository,
-    		ProductSearchRepository searchRepository) {
+                              ProductSearchRepository searchRepository) {
         this.repository = repository;
         this.searchRepository = searchRepository;
     }
 
+    /* =========================
+       CREATE
+       ========================= */
+
     @Override
+    @CachePut(value = "products", key = "#result.id")
     public ProductResponseDTO create(ProductRequestDTO request) {
+
         Product product = new Product();
         updateEntityFromDto(request, product);
+
         Product saved = repository.save(product);
+
         searchRepository.save(
-                ProductSearchMapper.toDocument(saved));
-        
+                ProductSearchMapper.toDocument(saved)
+        );
+
         return toResponse(saved);
     }
 
+    /* =========================
+       UPDATE
+       ========================= */
+
     @Override
+    @CachePut(value = "products", key = "#id")
     public ProductResponseDTO update(UUID id, ProductRequestDTO request) {
+
         Product product = repository.findById(id)
-                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
         updateEntityFromDto(request, product);
+
+        Product saved = repository.save(product);
+
         searchRepository.save(
-        ProductSearchMapper.toDocument(product)
+                ProductSearchMapper.toDocument(saved)
         );
-        return toResponse(repository.save(product));
+
+        return toResponse(saved);
     }
+
+    /* =========================
+       FIND BY ID
+       ========================= */
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "#id")
+    public ProductResponseDTO findById(UUID id) {
+
+        Product product = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        return toResponse(product);
+    }
+
+    /* =========================
+       FIND ALL
+       ========================= */
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "products_all")
+    public List<ProductResponseDTO> findAll() {
+
+        return repository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /* =========================
+       DELETE
+       ========================= */
+
+    @Override
+    @CacheEvict(value = "products", key = "#id")
+    public void delete(UUID id) {
+
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Product not found");
+        }
+
+        repository.deleteById(id);
+        searchRepository.deleteById(id);
+    }
+
+    /* =========================
+       Mapper
+       ========================= */
 
     private void updateEntityFromDto(ProductRequestDTO dto, Product entity) {
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setPrice(dto.getPrice());
-        entity.setStockQuantity(dto.getStock());  
+        entity.setStockQuantity(dto.getStock());
         entity.setCategory(dto.getCategory());
         entity.setActive(dto.getActive());
     }
@@ -72,37 +143,5 @@ public class ProductServiceImpl implements ProductService {
                 product.getCategory()
         );
     }
- 
-    @Override
-    @Transactional(readOnly = true)
-    public ProductResponseDTO findById(UUID id) {
-        Product product = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        return toResponse(product);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductResponseDTO> findAll() {
-        return repository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public void delete(UUID id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Product not found");
-        }
-        repository.deleteById(id);
-        searchRepository.deleteById(id);
-    }
-
-    /* =========================
-       Mapper manual
-       ========================= */
-
-  
- }
+}
