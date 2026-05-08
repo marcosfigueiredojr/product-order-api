@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,7 +58,14 @@ public class ProductServiceImpl implements ProductService {
        ========================= */
 
     @Override
-    @CachePut(value = "products", key = "#id")
+    @Caching(
+    put = {
+        @CachePut(value = "product-by-id", key = "#id")
+    },
+    evict = {
+        @CacheEvict(value = "product-list", allEntries = true)
+    }
+    )
     public ProductResponseDTO update(UUID id, ProductRequestDTO request) {
 
         Product product = repository.findById(id)
@@ -80,7 +88,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "products", key = "#id")
+    @Cacheable(value = "product-by-id", key = "#id", sync = true)
     public ProductResponseDTO findById(UUID id) {
 
         Product product = repository.findById(id)
@@ -95,7 +103,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "products_all")
+    @Cacheable(value = "product-list")
     public List<ProductResponseDTO> findAll() {
 
         return repository.findAll()
@@ -109,7 +117,12 @@ public class ProductServiceImpl implements ProductService {
        ========================= */
 
     @Override
-    @CacheEvict(value = "products", key = "#id")
+    @Caching(
+    evict = {
+        @CacheEvict(value = "product-by-id", key = "#id"),
+        @CacheEvict(value = "product-list", allEntries = true)
+    }
+    )
     public void delete(UUID id) {
 
         if (!repository.existsById(id)) {
