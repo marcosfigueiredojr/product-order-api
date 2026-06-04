@@ -3,7 +3,7 @@ spring:
     name: product-order-api
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092} # Recomendado externalizar para prod
     properties:
       "[session.timeout.ms]": 45000
       "[zookeeper.session.timeout.ms]": 45000
@@ -20,9 +20,9 @@ spring:
       retries: 3
 
   datasource:
-    url: jdbc:mysql://localhost:3306/ecommerce?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-    username: user_app
-    password: "Java@1979"
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/ecommerce?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    username: ${DB_USER:user_app}
+    password: ${DB_PASSWORD:"Java@1979"}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   flyway:
@@ -34,24 +34,33 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false # Em produção, o ideal é false para não inundar o log, mas mantive se precisar debugar
     properties:
       "[hibernate.format_sql]": true
       "[hibernate.type.preferred_uuid_jdbc_type]": VARBINARY
     open-in-view: false
 
   elasticsearch:
-    uris: http://localhost:9200
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200} # Recomendado externalizar para prod
     connection-timeout: 10s
     socket-timeout: 60s
 
   data:
-      redis:
-        host: localhost
-        port: 6379
-        timeout: 2000
+    redis:
+      host: meu-redis-api.n3fyra.ng.0001.use1.cache.amazonaws.com
+      port: 6379
+      timeout: 2s
+      # ssl:
+      #   enabled: false # Mantido desabilitado conforme criação do cluster na AWS (sem TLS)
+      # password: ${REDIS_PASSWORD} # Descomente apenas se ativar AUTH no ElastiCache futuramente
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 5
+
   cache:    
-        type: redis
+    type: redis
 
 management:
   endpoints:
@@ -61,23 +70,22 @@ management:
   endpoint:
     health:
       show-details: always
-
   metrics:
+    enable:
+      cache: true # <--- ADICIONE ESTA LINHA AQUI
     tags:
       application: product-order-api
-
-
+      
 server:
   port: 8080
   error:
     include-message: always
-    include-stacktrace: always
+    include-stacktrace: never # Em produção, altere para 'never' por segurança (boas práticas)
 
 logging:
   level:
     root: INFO
-    "[org.springframework.web]": DEBUG
-    "[org.hibernate.SQL]": DEBUG
-    "[org.hibernate.type.descriptor.sql.BasicBinder]": TRACE
+    "[org.springframework.web]": INFO # Mudado para INFO para evitar logs excessivos em produção
+    "[org.hibernate.SQL]": INFO
     "[br.com.marcos]": DEBUG
     "[org.apache.kafka]": WARN
