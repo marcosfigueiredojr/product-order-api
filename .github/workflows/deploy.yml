@@ -13,6 +13,53 @@ jobs:
     name: Build, Test and Deploy to AWS ECS
     runs-on: ubuntu-latest
 
+    # INFRAESTRUTURA DE BANCOS E BROKERS ADICIONADA:
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: product_order_db
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:7.0-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      kafka:
+        image: confluentinc/cp-kafka:7.3.0
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+          KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://localhost:29092,PLAINTEXT_HOST://localhost:9092'
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+          KAFKA_TRANSACTION_STATE_LOG_REREPLICATION_FACTOR: 1
+          KAFKA_PROCESS_ROLES: 'broker,controller'
+          KAFKA_CONTROLLER_QUORUM_VOTERS: '1@localhost:29093'
+          KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+          KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+          KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+          KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+          CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+          CHECK_LOCAL_USER: 'false'
+          xpack.security.enabled: 'false'
+        options: --health-cmd="curl http://localhost:9200/_cluster/health" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
     # 1. Checkout do código fonte do repositório
     - name: Checkout Source Code
@@ -26,9 +73,9 @@ jobs:
         distribution: 'temurin'
         cache: 'maven' # Cacheia as dependências para acelerar builds futuros
 
-    # 3. Compilação e Testes Unitários com Maven (JUnit)
+    # 3. Compilação e Testes Unitários com Maven (JUnit) usando o Wrapper local
     - name: Build and Test with Maven
-      run: mvn clean package
+      run: ./mvnw clean package
 
     # 4. Configuração das credenciais AWS de forma segura usando as Secrets
     - name: Configure AWS Credentials
@@ -72,7 +119,7 @@ jobs:
 
     # 8. Executa o deploy (Rolling Update) no Serviço do ECS sem downtime
     - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      uses: aws-actions/ecs-deploy-task-definition@v2
       with:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: product-order-service
