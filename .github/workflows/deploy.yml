@@ -119,7 +119,7 @@ jobs:
 
     # 8. Executa o deploy (Rolling Update) no Serviço do ECS sem downtime
     - name: Deploy Amazon ECS task definition
-      uses: aws-actions/ecs-deploy-task-definition@v2
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
       with:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: product-order-service
