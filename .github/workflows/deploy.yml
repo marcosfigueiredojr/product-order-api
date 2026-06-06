@@ -75,7 +75,7 @@ jobs:
 
     # 3. Compilação e Testes Unitários com Maven (JUnit) usando o Wrapper local
     - name: Build and Test with Maven
-      run: ./mvnw clean package
+      run: ./mvnw clean package -Dspring.profiles.active=test
 
     # 4. Configuração das credenciais AWS de forma segura usando as Secrets
     - name: Configure AWS Credentials
