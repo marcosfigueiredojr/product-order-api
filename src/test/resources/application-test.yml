@@ -4,9 +4,13 @@ spring:
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always # Garante que vai rodar o data.sql
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true # Aguarda o Hibernate criar as tabelas antes de rodar o SQL
     show-sql: true
 
   kafka:
