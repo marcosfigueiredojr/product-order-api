@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,9 +37,25 @@ public class VerificacaoPagamentoEstoqueTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @BeforeEach
+    void setUp() {
+        // 🧼 Limpa o repositório de usuários para evitar qualquer conflito
+        userRepository.deleteAll();
+
+        // 👤 Cria e salva o usuário 'user' requerido na busca do teste
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("user");
+        user.setPasswordHash("$2a$10$xyzDonutPasswordHashHereForSecurityDontChange");
+        user.setRole("ROLE_USER");
+
+        userRepository.save(user);
+    }
+
     @Test
     void IllegalStateException() {
         
+        // 🎯 Usuário encontrado com sucesso pelo ciclo de vida do JUnit!
         User user = userRepository.findByUsername("user")
             .orElseThrow(() -> new RuntimeException("Usuário 'user' não encontrado no banco de teste"));
 

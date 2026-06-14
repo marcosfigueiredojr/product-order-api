@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,21 @@ class ProductOrderApiApplicationTests {
 
     @Autowired
     private UserRepository userRepository;
+
+    @BeforeEach
+    void setUp() {
+        // 🧼 Evita chaves duplicadas limpando o repositório de usuários antes do teste
+        userRepository.deleteAll();
+
+        // 👤 Garante a existência do usuário 'user' consumido nos testes abaixo
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("user");
+        user.setPasswordHash("$2a$10$xyzDonutPasswordHashHereForSecurityDontChange");
+        user.setRole("ROLE_USER");
+
+        userRepository.save(user);
+    }
 
     @Test
     void contextLoads() {

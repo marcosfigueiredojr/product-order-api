@@ -4,8 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,12 +41,27 @@ public class IdempotenciaEstoqueTest {
     @Autowired
     private OrderRepository orderRepository;
 
+    @BeforeEach
+    void setUp() {
+        // 🧼 Limpa para evitar duplicidade de chaves ou conflito entre execuções
+        userRepository.deleteAll();
+
+        // 👤 Cria e salva o usuário 'user' necessário para o teste
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("user");
+        user.setPasswordHash("$2a$10$xyzDonutPasswordHashHereForSecurityDontChange");
+        user.setRole("ROLE_USER");
+
+        userRepository.save(user);
+    }
+
     @Test
     void shouldNotUpdateStockTwiceForSameOrder() {
 
+        // 🎯 Agora o usuário é encontrado com sucesso!
         User user = userRepository.findByUsername("user")
               .orElseThrow(() -> new RuntimeException("Usuário 'user' não encontrado no banco de teste"));
-
 
         // Arrange
         Product product = new Product();

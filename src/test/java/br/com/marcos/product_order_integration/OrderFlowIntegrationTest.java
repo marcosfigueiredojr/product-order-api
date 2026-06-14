@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,9 +20,11 @@ import br.com.marcos.product_order_application.dto.OrderResponseDTO;
 import br.com.marcos.product_order_application.service.OrderService;
 import br.com.marcos.product_order_domain.entity.Order;
 import br.com.marcos.product_order_domain.entity.Product;
+import br.com.marcos.product_order_domain.entity.UserAccount;
 import br.com.marcos.product_order_domain.enums.OrderStatus;
 import br.com.marcos.product_order_infrastructure.repository.OrderRepository;
 import br.com.marcos.product_order_infrastructure.repository.ProductRepository;
+import br.com.marcos.product_order_infrastructure.repository.UserAccountRepository;
 
 @SpringBootTest(classes = br.com.marcos.product_order.ProductOrderApiApplication.class)
 @WithMockUser(username = "admin", roles = {"USER", "ADMIN"})
@@ -36,6 +39,29 @@ class OrderFlowIntegrationTest {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private UserAccountRepository userAccountRepository;
+
+    private UUID userAccountId;
+
+    @BeforeEach
+    void setUp() {
+        // 🧼 Garante que o repositório está limpo antes de reinserir para evitar conflito de chaves
+        userAccountRepository.deleteAll();
+
+        // 👤 Gera o ID dinâmico que será usado na request do teste
+        this.userAccountId = UUID.randomUUID();
+
+        // 💾 Salva o usuário no banco de dados de teste para passar na validação do OrderServiceImpl
+        UserAccount user = new UserAccount();
+        user.setId(this.userAccountId);
+        user.setUsername("user");
+        user.setPasswordHash("$2a$10$xyzDonutPasswordHashHereForSecurityDontChange");
+        user.setRole("ROLE_USER");
+
+        userAccountRepository.save(user);
+    }
 
     @Test
     void shouldCreatePayAndUpdateStockSuccessfully() {
@@ -65,9 +91,10 @@ class OrderFlowIntegrationTest {
         // =========================
         // Arrange — request
         // =========================
-      CreateOrderRequestDTO request = new CreateOrderRequestDTO();
-                            request.setUserAccountId(UUID.randomUUID());
-                            request.setItems(items);
+        CreateOrderRequestDTO request = new CreateOrderRequestDTO();
+        // 🎯 Agora utilizamos o ID do usuário que foi salvo previamente no banco pelo @BeforeEach
+        request.setUserAccountId(this.userAccountId);
+        request.setItems(items);
 
         // =========================
         // Act — CREATE
