@@ -57,8 +57,7 @@ class ProductOrderApiApplicationTests {
         user.setId(UUID.randomUUID());
         user.setUsername("user");
         user.setPasswordHash("$2a$10$xyzDonutPasswordHashHereForSecurityDontChange");
-        user.setRole("ROLE_USER");
-
+        user.setRole(br.com.marcos.product_order_domain.enums.Role.ROLE_USER); // 🔄 Aqui
         userRepository.save(user);
     }
 
