@@ -1,13 +1,3 @@
--- =========================================================================
--- 1. LIMPEZA DOS DADOS (Evita conflitos entre execuções de testes)
--- =========================================================================
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE tb_order_item;
-TRUNCATE TABLE tb_orders;
-TRUNCATE TABLE tb_product;
-TRUNCATE TABLE tb_user_account;
-TRUNCATE TABLE tb_outbox_event;
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- =========================================================================
 -- 2. INSERÇÃO DO USUÁRIO DE TESTE (Exigido pelos testes de integração)
